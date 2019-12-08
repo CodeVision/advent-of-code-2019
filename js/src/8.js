@@ -70,7 +70,7 @@ const decode = (image, size) => {
 const printImage = (image, width) => {
   let result = [];
   for (let i = 0; i < image.length; i++) {
-    if (i % width === 0) {
+    if (i > 0 && i % width === 0) {
       result.push('\n');
     }
 
