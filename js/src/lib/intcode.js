@@ -43,9 +43,10 @@ function * run(memory, inputs) {
       pointer += 2;
     } else if (opcode == 4) {
       let output = getValue(memory, pointer + 1, modes[0], rel_base);
-      console.log(output);
+      // console.log(output);
       let newInput = yield { memory, output };
-      inputs.push(newInput);
+      if (newInput !== undefined)
+        inputs.push(newInput);
 
       pointer += 2;
     } else if (opcode == 5) {
