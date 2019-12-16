@@ -17,7 +17,7 @@ const createGrid = (width, height) => {
 };
 
 const paint = (grid, loc, statusId) => {
-  let status = ['#', '.', '*'][statusId];
+  let status = ['#', '.', '*', 'O'][statusId];
   grid[loc.y][loc.x] = status;
 };
 
@@ -52,10 +52,6 @@ const getStatus = (grid, pos) => {
   return grid[pos.y][pos.x];
 };
 
-const printPos = (pos) => {
-  return `(${pos.x}, ${pos.y})`;
-};
-
 const getMove = (grid, pos) => {
   let move = Math.floor(Math.random() * 4) + 1;
   for (let direction of [3, 1, 2, 4]) {
@@ -88,6 +84,18 @@ const gridContainsUnexplored = (grid) => {
   return false;
 };
 
+const full = (grid) => {
+  for (let row = 0; row < grid.length; row++) {
+    for (let col = 0; col < grid[0].length; col++) {
+      let char = grid[row][col];
+      if (char === '.') {
+        return false;
+      }
+    }
+  }
+  return true;
+};
+
 const run = (memory, grid) => {
   const computer = new intcode.IntCodeComputer(memory);
 
@@ -105,9 +113,51 @@ const run = (memory, grid) => {
     move = getMove(grid, pos);
     result = computer.run(move);
   }
-  paint(grid, getPos(pos, move), result);
+  pos = getPos(pos, move);
+
+  paint(grid, pos, result);
 
   return pos;
+};
+
+const getNeighbours = (location) => {
+  let neighbourLocs = [];
+  neighbourLocs.push({ x: location.x + 1, y: location.y });
+  neighbourLocs.push({ x: location.x - 1, y: location.y });
+  neighbourLocs.push({ x: location.x, y: location.y + 1 });
+  neighbourLocs.push({ x: location.x, y: location.y - 1 });
+  return neighbourLocs;
+};
+
+const getAdjacent = (grid, locations) => {
+  const adjacent = [];
+  for (let location of locations) {
+    let neighbours = getNeighbours(location);
+    for (let neighbour of neighbours) {
+      if (getStatus(grid, neighbour) === '.') {
+        adjacent.push(neighbour);
+      }
+    }
+  }
+
+  return [...new Set(adjacent)];
+};
+
+const fill = (grid, startPos) => {
+  let filled = [startPos];
+  let adjacent;
+  let minutes = 0;
+  while (!full(grid)) {
+    adjacent = getAdjacent(grid, filled);
+    for (let pos of adjacent) {
+      paint(grid, pos, 3);
+    }
+    filled = filled.concat(adjacent);
+    printGrid(grid, startPos);
+    minutes++;
+  }
+
+  return minutes;
 };
 
 
@@ -127,5 +177,15 @@ const run = (memory, grid) => {
     }
   } else {
     console.log('Part 2');
+    const grid = createGrid(60, 60);
+    let pos = run([...originalMemory], grid);
+    while (gridContainsUnexplored(grid)) {
+      pos = run([...originalMemory], grid);
+      printGrid(grid, pos);
+    }
+    console.log(pos);
+
+    let minutes = fill(grid, pos);
+    console.log(minutes);
   }
 })();
