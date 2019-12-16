@@ -25,28 +25,26 @@ const printGrid = (grid) => {
   }
 };
 
-const run = (memory, grid, moves) => {
-  const computer = intcode.run(memory, []);
+const run = (memory, grid, moves = []) => {
+  const computer = new intcode.IntCodeComputer(memory);
 
+  let result = computer.run(moves.shift());
   let x, y, tile, score = 0;
-  let result = { done: false };
-  while (result && !result.done) {
-    result = computer.next(moves.shift()).value;
-    if (!result)
-      break;
-    x = result.output;
-    result = computer.next(moves.shift()).value;
-    y = result.output;
+  while (result !== undefined) {
+    x = result;
+    result = computer.run(moves.shift());
+    y = result;
 
-    result = computer.next(moves.shift()).value;
+    result = computer.run(moves.shift());
 
     if (x === -1 && y === 0) {
-      score = result.output;
-      console.log(score);
+      score = result;
     } else {
-      tile = result.output;
+      tile = result;
       paint(grid, { x: x, y: y }, tile);
     }
+
+    result = computer.run(moves.shift());
 
   }
 
@@ -94,5 +92,6 @@ const numBlocks = (grid) => {
       }
       printGrid(grid);
     } while (numBlocks(grid) > 0);
+    console.log(score);
   }
 })();

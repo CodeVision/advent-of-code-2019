@@ -91,25 +91,24 @@ const printMap = (map, pos, direction) => {
 const run = (memory, map, paintMap = false) => {
   let pos = getMiddle(map);
   let direction = DIRECTIONS.UP;
-  const computer = intcode.run(memory, [getColor(map, pos)]);
+  const computer = new intcode.IntCodeComputer(memory);
 
   let painted = [];
-  let result = computer.next().value;
-  while (result && !result.done) {
-    console.log(`paint: ${result.output}`);
-    setColor(map, pos, result.output);
+  let result = computer.run(getColor(map, pos));
+  while (result !== undefined) {
+    console.log(`paint: ${result}`);
+    setColor(map, pos, result);
     painted.push(pos);
-    result = computer.next().value;
-    console.log(`move: ${result.output}`);
-    direction = getDirection(direction, result.output);
+    result = computer.run();
+    console.log(`move: ${result}`);
+    direction = getDirection(direction, result);
     pos = getPosition(pos, direction);
     console.log(`(${pos.x},${pos.y}): ${getColor(map, pos)}`);
-    result = computer.next(getColor(map, pos)).value;
+    result = computer.run(getColor(map, pos));
 
     if (paintMap)
       printMap(map, pos, direction);
   }
-
 
   return painted;
 };

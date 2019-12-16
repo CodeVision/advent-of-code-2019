@@ -11,25 +11,13 @@ const intcode = require('./lib/intcode');
   const input = Number(process.argv[4]);
 
   const originalMemory = await intcode.readInput(inputFile);
-  if (part == 1) {
-    const computer = intcode.run([...originalMemory], [input]);
-
+  const computer = new intcode.IntCodeComputer([...originalMemory]);
+  if (part == 1 || part == 2) {
     const output = [];
-    let result = computer.next().value;
-    while (result && !result.done) {
-      output.push(result.output);
-      result = computer.next().value;
-    }
-    console.log(output);
-
-  } else {
-    const computer = intcode.run([...originalMemory], [input]);
-
-    const output = [];
-    let result = computer.next().value;
-    while (result && !result.done) {
-      output.push(result.output);
-      result = computer.next().value;
+    let result = computer.run(input);
+    while (result !== undefined) {
+      output.push(result);
+      result = computer.run();
     }
     console.log(output);
   }

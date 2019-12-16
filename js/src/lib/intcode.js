@@ -4,105 +4,111 @@ const util = require('util');
 
 const readFile = util.promisify(fs.readFile);
 
-const getValue = (memory, pointer, mode, rel_base) => {
-  return memory[getPointer(memory, pointer, mode, rel_base)] || 0;
-};
 
-const getPointer = (memory, pointer, mode, rel_base) => {
-  if (!mode || mode === 0) {
-    return memory[pointer];
-  } else if (mode === 1) {
-    return pointer;
-  } else if (mode === 2) {
-    return memory[pointer] + rel_base;
+class IntCodeComputer {
+  constructor(memory) {
+    this.memory = memory;
+    this.pointer = 0;
+    this.relBase = 0;
   }
-};
 
-function * run(memory, inputs) {
-  let inputIndex = 0;
-  let rel_base = 0;
-  let pointer = 0;
-  let opcode = memory[pointer] % 100;
-  let modes = getModes(memory[pointer]);
+  getValue = (mode) => {
+    return this.memory[this.getPointer(mode)] || 0;
+  };
 
-  while (opcode != 99) {
-    if (opcode == 1) {
-      let value = getValue(memory, pointer + 1, modes[0], rel_base) + getValue(memory, pointer + 2, modes[1], rel_base);
-      memory[getPointer(memory, pointer + 3, modes[2], rel_base)] = value;
+  getPointer = (mode) => {
+    this.pointer++;
+    if (!mode || mode === 0) {
+      return this.memory[this.pointer];
+    } else if (mode === 1) {
+      return this.pointer;
+    } else if (mode === 2) {
+      return this.memory[this.pointer] + this.relBase;
+    }
+  };
 
-      pointer += 4;
-    } else if (opcode == 2) {
-      let value1 = getValue(memory, pointer + 1, modes[0], rel_base);
-      let value2 = getValue(memory, pointer + 2, modes[1], rel_base);
-      memory[getPointer(memory, pointer + 3, modes[2], rel_base)] = value1 * value2;
+  run(input) {
+    let opcode = this.memory[this.pointer] % 100;
+    let modes = this.getModes(this.pointer);
 
-      pointer += 4;
-    } else if (opcode == 3) {
-      memory[getPointer(memory, pointer + 1, modes[0], rel_base)] = inputs[inputIndex++];
+    while (opcode != 99) {
+      if (opcode == 1) {
+        let value = this.getValue(modes[0]) + this.getValue(modes[1]);
+        this.memory[this.getPointer(modes[2])] = value;
 
-      pointer += 2;
-    } else if (opcode == 4) {
-      let output = getValue(memory, pointer + 1, modes[0], rel_base);
-      // console.log(output);
-      let newInput = yield { memory, output };
-      if (newInput !== undefined)
-        inputs.push(newInput);
+        this.pointer += 1;
+      } else if (opcode == 2) {
+        let value1 = this.getValue(modes[0]);
+        let value2 = this.getValue(modes[1]);
+        this.memory[this.getPointer(modes[2])] = value1 * value2;
 
-      pointer += 2;
-    } else if (opcode == 5) {
-      if (getValue(memory, pointer + 1, modes[0], rel_base) !== 0) {
-        pointer = getValue(memory, pointer + 2, modes[1], rel_base);
-      } else {
-        pointer += 3;
+        this.pointer += 1;
+      } else if (opcode == 3) {
+        this.memory[this.getPointer(modes[0])] = input;
+
+        this.pointer += 1;
+      } else if (opcode == 4) {
+        let output = this.getValue(modes[0]);
+
+        this.pointer += 1;
+
+        return output;
+      } else if (opcode == 5) {
+        if (this.getValue(modes[0]) !== 0) {
+          this.pointer = this.getValue(modes[1]);
+        } else {
+          this.pointer += 2;
+        }
+      } else if (opcode == 6) {
+        if (this.getValue(modes[0]) === 0) {
+          this.pointer = this.getValue(modes[1]);
+        } else {
+          this.pointer += 2;
+        }
+      } else if (opcode == 7) {
+        if (this.getValue(modes[0]) < this.getValue(modes[1])) {
+          this.memory[this.getPointer(modes[2])] = 1;
+        } else {
+          this.memory[this.getPointer(modes[2])] = 0;
+        }
+
+        this.pointer += 1;
+      } else if (opcode == 8) {
+        if (this.getValue(modes[0]) === this.getValue(modes[1])) {
+          this.memory[this.getPointer(modes[2])] = 1;
+        } else {
+          this.memory[this.getPointer(modes[2])] = 0;
+        }
+
+        this.pointer += 1;
+      } else if (opcode == 9) {
+        this.relBase += this.getValue(modes[0]);
+
+        this.pointer += 1;
       }
-    } else if (opcode == 6) {
-      if (getValue(memory, pointer + 1, modes[0], rel_base) === 0) {
-        pointer = getValue(memory, pointer + 2, modes[1], rel_base);
-      } else {
-        pointer += 3;
-      }
-    } else if (opcode == 7) {
-      if (getValue(memory, pointer + 1, modes[0], rel_base) < getValue(memory, pointer + 2, modes[1], rel_base)) {
-        memory[getPointer(memory, pointer + 3, modes[2], rel_base)] = 1;
-      } else {
-        memory[getPointer(memory, pointer + 3, modes[2], rel_base)] = 0;
-      }
 
-      pointer += 4;
-    } else if (opcode == 8) {
-      if (getValue(memory, pointer + 1, modes[0], rel_base) === getValue(memory, pointer + 2, modes[1], rel_base)) {
-        memory[getPointer(memory, pointer + 3, modes[2], rel_base)] = 1;
-      } else {
-        memory[getPointer(memory, pointer + 3, modes[2], rel_base)] = 0;
-      }
+      opcode = this.memory[this.pointer] % 100;
+      modes = this.getModes(this.pointer);
 
-      pointer += 4;
-    } else if (opcode == 9) {
-      rel_base += getValue(memory, pointer + 1, modes[0], rel_base);
+      // console.log(`opcode: ${opcode}, modes: ${modes}, relBase: ${this.relBase}`);
+      // console.log(this.memory);
+    }
+  }
 
-      pointer += 2;
+  getModes = (pointer) => {
+    let value = this.memory[pointer];
+    let modesValue = (value - value % 100) / 100;
+    let modes = [];
+    while (modesValue >= 1) {
+      let mode = modesValue % 10;
+      modes.push(mode);
+
+      modesValue = (modesValue - mode) / 10;
     }
 
-    opcode = memory[pointer] % 100;
-    modes = getModes(memory[pointer]);
-
-    // console.log(`opcode: ${opcode}, modes: ${modes}, rel_base: ${rel_base}`);
-    // console.log(memory);
+    return modes;
   }
 }
-
-const getModes = (value) => {
-  let modesValue = (value - value % 100) / 100;
-  let modes = [];
-  while (modesValue >= 1) {
-    let mode = modesValue % 10;
-    modes.push(mode);
-
-    modesValue = (modesValue - mode) / 10;
-  }
-
-  return modes;
-};
 
 const readInput = async (input) => {
   return readFile(input, 'utf8').then(data => {
@@ -114,5 +120,5 @@ const readInput = async (input) => {
 
 module.exports = {
   readInput,
-  run,
+  IntCodeComputer,
 };
