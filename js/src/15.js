@@ -101,7 +101,8 @@ const run = (memory, grid) => {
 
   let move = 1;
   let pos = { x: grid[0].length / 2, y: grid.length / 2 };
-  let result = computer.run(move);
+  computer.addInput(move);
+  let result = computer.run();
   while (result !== 2) {
     // console.log(`pos: ${printPos(pos)}, move: ${move} - result: ${result}`);
     paint(grid, getPos(pos, move), result);
@@ -111,7 +112,8 @@ const run = (memory, grid) => {
 
     // printGrid(grid, pos);
     move = getMove(grid, pos);
-    result = computer.run(move);
+    computer.addInput(move);
+    result = computer.run();
   }
   pos = getPos(pos, move);
 

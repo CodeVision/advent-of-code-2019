@@ -1,4 +1,3 @@
-
 'use strict';
 
 /* eslint-disable no-console */
@@ -49,6 +48,48 @@ const getInsersections = (grid) => {
   return intersections;
 };
 
+const encode = (sequence) => {
+  let result = [];
+  for (let i = 0; i < sequence.length; i++) {
+    let s = sequence[i];
+    if (s.length == 1) {
+      result.push(s.charCodeAt());
+    } else {
+      for (let c of s.split('')) {
+        result.push(c.charCodeAt());
+      }
+    }
+
+    if (i !== sequence.length - 1) {
+      result.push(','.charCodeAt());
+    }
+  }
+  result.push(10);
+
+  return result;
+};
+
+const vacuum = (memory, routine, funcs) => {
+  const computer = new intcode.IntCodeComputer(memory);
+
+  let inputs = routine.concat(funcs.flat()).concat([110, 10]);
+  for (let input of inputs) {
+    computer.addInput(input);
+  }
+  let result = null;
+  while (result !== undefined) {
+    result = computer.run();
+
+    if (result < 128) {
+      process.stdout.write(String.fromCharCode(result));
+    } else {
+      return result;
+    }
+  }
+
+  return result;
+};
+
 (async () => {
   // main
   const inputFile = process.argv[2];
@@ -65,5 +106,17 @@ const getInsersections = (grid) => {
     console.log(intersections.reduce((sum, i) => sum + i.x * i.y, 0));
   } else {
     console.log('Part 2');
+
+    const routine = encode("ABBCCABBCA".split(''));
+    const funcs = [
+      ['R', '4', 'R', '12', 'R', '10', 'L', '12'],
+      ['L', '12', 'R', '4', 'R', '12'],
+      ['L', '12', 'L', '8', 'R', '10']
+    ].map(encode);
+
+    const memory = [...originalMemory];
+    memory[0] = 2;
+    const result = vacuum(memory, routine, funcs);
+    console.log(result);
   }
 })();

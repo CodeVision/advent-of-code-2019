@@ -94,7 +94,8 @@ const run = (memory, map, paintMap = false) => {
   const computer = new intcode.IntCodeComputer(memory);
 
   let painted = [];
-  let result = computer.run(getColor(map, pos));
+  computer.addInput(getColor(map, pos));
+  let result = computer.run();
   while (result !== undefined) {
     console.log(`paint: ${result}`);
     setColor(map, pos, result);
@@ -104,7 +105,8 @@ const run = (memory, map, paintMap = false) => {
     direction = getDirection(direction, result);
     pos = getPosition(pos, direction);
     console.log(`(${pos.x},${pos.y}): ${getColor(map, pos)}`);
-    result = computer.run(getColor(map, pos));
+    computer.addInput(getColor(map, pos));
+    result = computer.run();
 
     if (paintMap)
       printMap(map, pos, direction);

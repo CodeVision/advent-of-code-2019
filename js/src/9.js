@@ -14,7 +14,8 @@ const intcode = require('./lib/intcode');
   const computer = new intcode.IntCodeComputer([...originalMemory]);
   if (part == 1 || part == 2) {
     const output = [];
-    let result = computer.run(input);
+    computer.addInput(input);
+    let result = computer.run();
     while (result !== undefined) {
       output.push(result);
       result = computer.run();

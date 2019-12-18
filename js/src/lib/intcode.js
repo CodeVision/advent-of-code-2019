@@ -10,13 +10,15 @@ class IntCodeComputer {
     this.memory = memory;
     this.pointer = 0;
     this.relBase = 0;
+    this.inputs = [];
+    this.inputIndex = 0;
   }
 
-  getValue = (mode) => {
+  getValue(mode) {
     return this.memory[this.getPointer(mode)] || 0;
-  };
+  }
 
-  getPointer = (mode) => {
+  getPointer(mode) {
     this.pointer++;
     if (!mode || mode === 0) {
       return this.memory[this.pointer];
@@ -25,9 +27,17 @@ class IntCodeComputer {
     } else if (mode === 2) {
       return this.memory[this.pointer] + this.relBase;
     }
-  };
+  }
 
-  run(input) {
+  addInput(input) {
+    this.inputs.push(input);
+  }
+
+  getInput() {
+    return this.inputs[this.inputIndex++];
+  }
+
+  run() {
     let opcode = this.memory[this.pointer] % 100;
     let modes = this.getModes(this.pointer);
 
@@ -44,7 +54,7 @@ class IntCodeComputer {
 
         this.pointer += 1;
       } else if (opcode == 3) {
-        this.memory[this.getPointer(modes[0])] = input;
+        this.memory[this.getPointer(modes[0])] = this.getInput();
 
         this.pointer += 1;
       } else if (opcode == 4) {
@@ -95,7 +105,7 @@ class IntCodeComputer {
     }
   }
 
-  getModes = (pointer) => {
+  getModes(pointer) {
     let value = this.memory[pointer];
     let modesValue = (value - value % 100) / 100;
     let modes = [];
